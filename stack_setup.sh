@@ -3,9 +3,9 @@
 add_var_to_bashrc() {
     if ! grep -q "$1=" ~/.bashrc; then
         printf "export $1=$2\n" >> ~/.bashrc
-        printf "Variável '$1' adicionada ao arquivo '~/.bashrc'.\n"
+        printf "Variable '$1' added into file '~/.bashrc'.\n"
     else
-        printf "Variável '$1' já existe no arquivo '~/.bashrc':"
+        printf "Variable '$1' already exists in file '~/.bashrc':"
         printf "\n\n$(grep "$1=" ~/.bashrc)\n\n"
     fi
 }
