@@ -1,5 +1,15 @@
 #!/bin/bash
 
+add_var_to_bashrc() {
+    if ! grep -q "$1=" ~/.bashrc; then
+        printf "export $1=$2\n" >> ~/.bashrc
+        printf "Variável '$1' adicionada ao arquivo '~/.bashrc'.\n"
+    else
+        printf "Variável '$1' já existe no arquivo '~/.bashrc':"
+        printf "\n\n$(grep "$1=" ~/.bashrc)\n\n"
+    fi
+}
+
 wrong_input() {
     echo "Insert a valid option!"
     echo ""
@@ -73,6 +83,58 @@ ssh_config() {
 
     # Adds SSH key to ssh-agent, enabling it to be used by the current user
     ssh-add ~/.ssh/${key_file}
+    mainmenu
+}
+
+spark_config() {
+    echo "Checking for compatible Java JDK versions. Please provide your system password for updates..."
+    sleep 2s
+    sudo apt update -qq
+    sudo apt upgrade -qq
+    sudo apt autoremove -qq
+    sudo apt install openjdk-8-jre-headless
+    sudo update-java-alternatives --jre-headless --jre --set java-1.8.0-openjdk-amd64
+    sudo apt-get install libpq-dev
+
+    echo "Which Spark build do you want to install?"
+    select yn in "AWS compatible" "Apache default"; do
+        case $yn in
+            'AWS compatible' )
+                SPARK_VERSION=2.4.3
+                HADOOP_VERSION=2.8
+                echo "Spark $SPARK_VERSION will be installed with Hadoop $HADOOP_VERSION build."
+                wget -q --show-progress https://aws-glue-etl-artifacts.s3.amazonaws.com/glue-1.0/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION.tgz -P /tmp
+                break;;
+            'Apache default' )
+                DEFAULT_SPARK_VERSION=3.0.0
+                read -p "Type the Spark version you want to install, in the format {version}.{subversion}.{build} [default=$DEFAULT_SPARK_VERSION]: " SPARK_VERSION;
+                : ${SPARK_VERSION:=$DEFAULT_SPARK_VERSION}
+
+                DEFAULT_HADOOP_VERSION=3.2
+                read -p "Type the Hadoop version you want your Spark to be built with, in the format {version}.{subversion} [default=$DEFAULT_HADOOP_VERSION]: " HADOOP_VERSION;
+                : ${HADOOP_VERSION:=$DEFAULT_HADOOP_VERSION}
+                
+                echo "Spark $SPARK_VERSION will be installed with Hadoop $HADOOP_VERSION build."
+                sleep 1s
+                wget -q --show-progress https://archive.apache.org/dist/spark/spark-$SPARK_VERSION/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION.tgz -P /tmp
+
+                sleep 2s
+                break;;
+        esac
+    done
+    if [ -f /tmp/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION.tgz ]
+        then
+            sudo mkdir -p /usr/local/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION
+            sudo tar xzf /tmp/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION.tgz --strip-components 1 -C /usr/local/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION
+            sudo rm /tmp/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION.tgz
+            echo "Spark installed in '/usr/local/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION'."
+        else
+            echo ""
+            echo "No Spark distribution with version $SPARK_VERSION or with Hadoop version $HADOOP_VERSION was found."
+            echo "Please visit https://archive.apache.org/dist/spark/ for an available list of distributions."
+    fi
+    read -n 1 -s -r -p "Press any key to continue..."
+
     mainmenu
 }
 
@@ -232,6 +294,7 @@ mainmenu () {
     echo "Type 6 to install SQL Power Architect"
     echo "Type 7 to install VPN FortiClient"
     echo "Type 8 to install Docker and Docker Compose"
+    echo "Type 9 to install Spark"
     echo "Type x to exit script"
     read -p "Option: " mainmenuinput
 
@@ -309,6 +372,8 @@ mainmenu () {
         
         read -n 1 -s -r -p "Docker has been installed successfully. Restart your system to apply the changes..."
         exit
+    elif [ "$mainmenuinput" = "9" ]; then
+        spark_config
     elif [ "$mainmenuinput" = "X" ] || [ "$mainmenuinput" = "x" ]; then
         clear && clear
         exit
