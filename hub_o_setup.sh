@@ -128,6 +128,7 @@ spark_config() {
             sudo tar xzf /tmp/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION.tgz --strip-components 1 -C /usr/local/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION
             sudo rm /tmp/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION.tgz
             echo "Spark installed in '/usr/local/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION'."
+            add_var_to_bashrc "SPARK_HOME" "/usr/local/spark-$SPARK_VERSION-bin-hadoop$HADOOP_VERSION"
         else
             echo ""
             echo "No Spark distribution with version $SPARK_VERSION or with Hadoop version $HADOOP_VERSION was found."
